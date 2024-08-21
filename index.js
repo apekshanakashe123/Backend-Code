@@ -1,8 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const authRoutes = require('../Backend-Code/routes/LoginRoutes');
-const accountRoutes = require('../Backend-Code/routes/AccountRoutes');
-const TransRoutes = require('../Backend-Code/routes/TransactionRoutes');
+const authRoutes = require('../routes/LoginRoutes');
+const accountRoutes = require('../routes/AccountRoutes');
+const TransRoutes = require('../routes/TransactionRoutes');
 const cors = require('cors');
 const app = express();
 app.use(cors());
