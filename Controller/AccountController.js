@@ -15,7 +15,7 @@ async function executeQuery(query, inputs = []) {
         });
 
         const result = await request.query(query);
-        return result.recordsets;
+        return result.recordset;
     } catch (err) {
         console.error('Database query error:', err);
         return 'error';
@@ -36,7 +36,7 @@ exports.getAllAccounts = async (req, res) => {
         }
 
        
-        const query = `SELECT UserID, username, Email FROM Users WHERE UserType = 'customer' `;
+        const query = `SELECT Id, username, email FROM Users WHERE UserType = 'customer' `;
         const result = await executeQuery(query);
 
         if (result === 'error') {
@@ -61,7 +61,7 @@ exports.getUserTransactions = async (req, res) => {
         }
 
         
-        const query = 'SELECT * FROM Accounts WHERE UserID = @userId';
+        const query = 'SELECT * FROM Accounts WHERE Id = @userId';
         const inputs = [{ name: 'userID', value: userId }];
         const result = await executeQuery(query, inputs);
         console.log(result)

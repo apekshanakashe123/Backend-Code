@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const sql = require('mssql');
 const config = require('../config/database');
 const crypto = require('crypto');
+//chnages in 
 
 function generateRandomString(length) {
   return crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
@@ -10,7 +11,7 @@ function generateRandomString(length) {
 
 const poolPromise = new sql.ConnectionPool(config.db)
   .connect()
-  .catch(err => console.error('Database connection failed:', err));
+  .catch(err => console.error('Datebase Connection Failed:', err));
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
@@ -31,12 +32,13 @@ exports.login = async (req, res) => {
     }
 
     
+
  
     const accessToken = generateRandomString(36);
 
    
     const tokenPayload = {
-        email: user.Email,
+        email: user.email,
         access_token: accessToken 
     };
     console.log(tokenPayload);
@@ -46,10 +48,11 @@ exports.login = async (req, res) => {
 
 await pool.request()
 .input('jwtToken', jwtToken)
-.input('userId', user.UserID)
-.query('UPDATE Users SET access_token = @jwtToken WHERE UserID = @userId');
+.input('userId', user.Id)
+.query('UPDATE Users SET access_token = @jwtToken WHERE Id = @userId');
 
 res.json({ token: jwtToken, role: user.UserType });
+console.log('Token is send')
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

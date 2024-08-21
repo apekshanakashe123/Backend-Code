@@ -28,11 +28,22 @@ async function executeQuery(query, inputs = []) {
 
 
 exports.getTransactions = async (req, res) => {
-    const userId = req.user.UserID;
+   
 
     try {
-        const query = 'SELECT A.AccountID,U.Username,A.TransactionType,A.Amount,A.TransactionDate,A.balanceAmount FROM Accounts A inner join Users U on A.UserID=U.UserID where A.UserID = 2 ORDER BY TransactionDate DESC';
-        const inputs = [{ name: 'userID', value: userId }];
+
+        const authHeader = req.headers['authorization'];
+        const token = authHeader.split(' ')[1];
+         
+        const getIdQuery = `SELECT Id FROM Users WHERE access_token = @token`;
+        const userIdResult = await executeQuery(getIdQuery, [{ name: 'token', value: token }]);
+        if (userIdResult === 'error' || userIdResult.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+            
+        }
+        const userId = userIdResult[0][0].Id;
+        const query = `SELECT A.AccountID,U.Username,A.TransactionType,A.Amount,A.TransactionDate,A.balanceAmount FROM Accounts A inner join Users U on A.Id=U.Id where A.Id =@userId   ORDER BY TransactionDate DESC`;
+        const inputs = [{ name: 'userId', value: userId }];
         const result = await executeQuery(query, inputs);
 
         if (result === 'error' || result.length === 0) {
@@ -48,18 +59,26 @@ exports.getTransactions = async (req, res) => {
 
 
 exports.deposit = async (req, res) => {
-    const userId = req.user.UserID;
+    const userId = req.user.Id;
     const { amount, TransDate } = req.body;
-
+    console.log(amount,TransDate)
     try {
       
         if (amount <= 0) {
             return res.status(400).json({ message: 'Amount must be greater than zero' });
         }
 
-        // Get the current balance of the user
-        const balanceQuery = 'SELECT TOP(1) balanceAmount from Accounts WHERE userID = @userId ORDER BY TransactionDate DESC';
-        const balanceResult = await executeQuery(balanceQuery, [{ name: 'userID', type: sql.Int, value: userId }]);
+        // const authHeader = req.headers['authorization'];
+        // const token = authHeader.split(' ')[1];
+        //  console.log(token)
+        // const getIdQuery = `SELECT Id FROM Users WHERE access_token = @token`;
+        // const userIdResult = await executeQuery(getIdQuery, [{ name: 'token', value: token }]);
+        // if (userIdResult === 'error' || userIdResult.length === 0) {
+        //     return res.status(404).json({ message: 'User not found' });
+        // }
+        
+        const balanceQuery = 'SELECT TOP(1) balanceAmount from Accounts WHERE Id = @userId ORDER BY TransactionDate DESC';
+        const balanceResult = await executeQuery(balanceQuery, [{ name: 'userId', value: userId }]);
         console.log(balanceResult)
         if (balanceResult === 'error' || balanceResult.length === 0) {
             return res.status(404).json({ message: 'Account not found' });
@@ -71,13 +90,13 @@ exports.deposit = async (req, res) => {
         console.log(newBalance)
 
         const updateQuery = `
-            UPDATE Accounts SET balanceAmount = @newBalance WHERE userID = @userId;
-            INSERT INTO Accounts (UserID,TransactionType, Amount, TransactionDate,balanceAmount) 
+            UPDATE Accounts SET balanceAmount = @newBalance WHERE Id = @userId;
+            INSERT INTO Accounts (Id,TransactionType, Amount, TransactionDate,balanceAmount) 
             VALUES (@userId, 'deposit',@amount,@TransDate,@newBalance);
         `;
         const inputs = [
             { name: 'newBalance', value: newBalance },
-            { name: 'userID', value: userId },
+            { name: 'userId', value: userId },
             { name: 'amount', value: amount },
             { name: 'TransDate', value: TransDate }
         ];
@@ -95,7 +114,7 @@ exports.deposit = async (req, res) => {
 };
 
 exports.withdraw = async (req, res) => {
-    const userId = req.user.UserID;
+    const userId = req.user.Id;
     const { amount, Withdrawdate } = req.body;
 
     try {
@@ -104,8 +123,16 @@ exports.withdraw = async (req, res) => {
             return res.status(400).json({ message: 'Amount must be greater than zero' });
         }
 
-        
-        const balanceQuery = 'SELECT TOP(1) balanceAmount FROM Accounts WHERE userID = @userId ORDER BY TransactionDate DESC';
+        // const authHeader = req.headers['authorization'];
+        // const token = authHeader.split(' ')[1];
+         
+        // const getIdQuery = `SELECT Id FROM Users WHERE access_token = @token`;
+        // const userIdResult = await executeQuery(getIdQuery, [{ name: 'token', value: token }]);
+        // if (userIdResult === 'error' || userIdResult.length === 0) {
+        //     return res.status(404).json({ message: 'User not found' });
+        // }
+        // const userId = userIdResult[0][0].Id;
+        const balanceQuery = 'SELECT TOP(1) balanceAmount FROM Accounts WHERE Id = @userId ORDER BY TransactionDate DESC';
         const balanceResult = await executeQuery(balanceQuery, [{ name: 'userId', value: userId }]);
 
         if (balanceResult === 'error' || balanceResult.length === 0) {
@@ -123,8 +150,8 @@ exports.withdraw = async (req, res) => {
 
         
         const updateQuery = `
-            UPDATE Accounts SET balanceAmount = @newBalance WHERE userID = @userId;
-            INSERT INTO Accounts (userID, Amount, TransactionType, TransactionDate, balanceAmount) 
+            UPDATE Accounts SET balanceAmount = @newBalance WHERE Id = @userId;
+            INSERT INTO Accounts (Id, Amount, TransactionType, TransactionDate, balanceAmount) 
             VALUES (@userId, @amount, 'withdrawal', @Withdrawdate, @newBalance);
         `;
         const inputs = [
@@ -145,4 +172,5 @@ exports.withdraw = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+//
 
